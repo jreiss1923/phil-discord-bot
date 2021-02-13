@@ -54,18 +54,21 @@ twitter_api = api.Api(consumer_key=os.getenv('TWITTER_API_TOKEN'),
                   access_token_key=os.getenv('TWITTER_ACCESS_TOKEN'),
                   access_token_secret=os.getenv('TWITTER_ACCESS_SECRET_TOKEN'))
 
-phil_timeline = twitter_api.GetUserTimeline(screen_name="Weeabuddhaboo")
-
 last_phil_tweet_date = None
-
+phil_follower_count = 0
 
 # Sends Phil twitter updates and Phil follower counts to the specified channel
 @client.event
 async def phil_twitter_update(self):
+    global phil_follower_count
     await client.wait_until_ready()
 
     # current channel: Test - general
     channel = client.get_channel(458644594905710595)
+
+    # gets timeline, profile of Phil
+    phil_timeline = twitter_api.GetUserTimeline(screen_name="Weeabuddhaboo")
+    phil_twitter_followers = int(twitter_api.GetUser(screen_name="Weeabuddhaboo").AsDict()['followers_count'])
 
     # gets most recent status and posts if not a retweet
     for status in phil_timeline:
@@ -73,8 +76,14 @@ async def phil_twitter_update(self):
         if not status_dict.keys().__contains__('retweeted_status') and (last_phil_tweet_date is None or last_phil_tweet_date < convert_str_to_date(status_dict['created_at'])):
             await channel.send("@everyone https://twitter.com/Weeabuddhaboo/status/" + str(status_dict['id']))
             break
-    #   if twitter api gets followers>prev_followers and followers%5==0:
-    #       send message "@everyone congratulate phil on more followers"
+
+    # gets follower count and sends congratulations message
+    if phil_twitter_followers > phil_follower_count and phil_twitter_followers % 5 == 0:
+        await channel.send("@everyone congratulate Phil on reaching " + str(phil_twitter_followers) + " followers!")
+
+    # make sure to update the follower count
+    phil_follower_count = phil_twitter_followers
+
 
 client.loop.create_task(phil_twitter_update(client))
 client.run(os.getenv('PHIL_BOT_TOKEN'))
