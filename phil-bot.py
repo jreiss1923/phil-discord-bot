@@ -3,7 +3,18 @@ import datetime
 from twitter import api
 from dotenv import load_dotenv
 import os
+
 load_dotenv()
+
+client = discord.Client()
+
+twitter_api = api.Api(consumer_key=os.getenv('TWITTER_API_TOKEN'),
+                      consumer_secret=os.getenv('TWITTER_API_SECRET_TOKEN'),
+                      access_token_key=os.getenv('TWITTER_ACCESS_TOKEN'),
+                      access_token_secret=os.getenv('TWITTER_ACCESS_SECRET_TOKEN'))
+
+last_phil_tweet_date = None
+phil_follower_count = 0
 
 
 # converts Twitter time str to datetime
@@ -47,16 +58,6 @@ def convert_month_code(month_str):
         return 12
 
 
-client = discord.Client()
-
-twitter_api = api.Api(consumer_key=os.getenv('TWITTER_API_TOKEN'),
-                  consumer_secret=os.getenv('TWITTER_API_SECRET_TOKEN'),
-                  access_token_key=os.getenv('TWITTER_ACCESS_TOKEN'),
-                  access_token_secret=os.getenv('TWITTER_ACCESS_SECRET_TOKEN'))
-
-last_phil_tweet_date = None
-phil_follower_count = 0
-
 # Sends Phil twitter updates and Phil follower counts to the specified channel
 @client.event
 async def phil_twitter_update(self):
@@ -73,7 +74,8 @@ async def phil_twitter_update(self):
     # gets most recent status and posts if not a retweet
     for status in phil_timeline:
         status_dict = status.AsDict()
-        if not status_dict.keys().__contains__('retweeted_status') and (last_phil_tweet_date is None or last_phil_tweet_date < convert_str_to_date(status_dict['created_at'])):
+        if not status_dict.keys().__contains__('retweeted_status') and (
+                last_phil_tweet_date is None or last_phil_tweet_date < convert_str_to_date(status_dict['created_at'])):
             await channel.send("@everyone https://twitter.com/Weeabuddhaboo/status/" + str(status_dict['id']))
             break
 
