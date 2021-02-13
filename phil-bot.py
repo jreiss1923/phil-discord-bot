@@ -62,29 +62,32 @@ def convert_month_code(month_str):
 @client.event
 async def phil_twitter_update(self):
     global phil_follower_count
+    global last_phil_tweet_date
     await client.wait_until_ready()
 
-    # current channel: Test - general
-    channel = client.get_channel(458644594905710595)
+    while True:
+        # current channel: Test - general
+        channel = client.get_channel(458644594905710595)
 
-    # gets timeline, profile of Phil
-    phil_timeline = twitter_api.GetUserTimeline(screen_name="Weeabuddhaboo")
-    phil_twitter_followers = int(twitter_api.GetUser(screen_name="Weeabuddhaboo").AsDict()['followers_count'])
+        # gets timeline, profile of Phil
+        phil_timeline = twitter_api.GetUserTimeline(screen_name="Weeabuddhaboo")
+        phil_twitter_followers = int(twitter_api.GetUser(screen_name="Weeabuddhaboo").AsDict()['followers_count'])
 
-    # gets most recent status and posts if not a retweet
-    for status in phil_timeline:
-        status_dict = status.AsDict()
-        if not status_dict.keys().__contains__('retweeted_status') and (
-                last_phil_tweet_date is None or last_phil_tweet_date < convert_str_to_date(status_dict['created_at'])):
-            await channel.send("@everyone https://twitter.com/Weeabuddhaboo/status/" + str(status_dict['id']))
-            break
+        # gets most recent status and posts if not a retweet
+        for status in phil_timeline:
+            status_dict = status.AsDict()
+            if not status_dict.keys().__contains__('retweeted_status') and (
+                    last_phil_tweet_date is None or last_phil_tweet_date < convert_str_to_date(status_dict['created_at'])):
+                await channel.send("@everyone https://twitter.com/Weeabuddhaboo/status/" + str(status_dict['id']))
+                last_phil_tweet_date = convert_str_to_date(status_dict['created_at'])
+                break
 
-    # gets follower count and sends congratulations message
-    if phil_twitter_followers > phil_follower_count and phil_twitter_followers % 5 == 0:
-        await channel.send("@everyone congratulate Phil on reaching " + str(phil_twitter_followers) + " followers!")
+        # gets follower count and sends congratulations message
+        if phil_twitter_followers > phil_follower_count and phil_twitter_followers % 5 == 0:
+            await channel.send("@everyone congratulate Phil on reaching " + str(phil_twitter_followers) + " followers!")
 
-    # make sure to update the follower count
-    phil_follower_count = phil_twitter_followers
+        # make sure to update the follower count
+        phil_follower_count = phil_twitter_followers
 
 
 client.loop.create_task(phil_twitter_update(client))
